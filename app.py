@@ -36,7 +36,7 @@ def get_db_connection():
     return mysql.connector.connect(
         host='localhost',
         user='root',
-        password='1234',
+        password='password',
         database='medical_ai'
     )
 
@@ -351,7 +351,7 @@ def describe_file(filename):
     return render_template('description.html', filename=filename, description=description, symptom_descriptions=symptom_descriptions, health_tips=health_tips, medicines=medicines, clinics=clinics, user_location=user_location, api_key=GOOGLE_MAPS_API_KEY)
 
 # --- Google Maps/Places API for Clinics ---
-GOOGLE_MAPS_API_KEY = 'Ur Api key  # Updated with your new API key
+GOOGLE_MAPS_API_KEY = 'Ur Api key ' # Updated with your new API key
 
 def find_nearby_clinics(location):
     # Use Google Places API to find clinics/hospitals near the location

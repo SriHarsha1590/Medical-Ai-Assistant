@@ -155,3 +155,4 @@ uploads/
 *.db
 *.sqlite
 *.log
+venv/

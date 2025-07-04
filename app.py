@@ -351,11 +351,11 @@ def describe_file(filename):
     return render_template('description.html', filename=filename, description=description, symptom_descriptions=symptom_descriptions, health_tips=health_tips, medicines=medicines, clinics=clinics, user_location=user_location, api_key=GOOGLE_MAPS_API_KEY)
 
 # --- Google Maps/Places API for Clinics ---
-GOOGLE_MAPS_API_KEY = 'AIzaSyAi2zJcZ_OEEoyIvIJqg8SdrzNWlaprMZY'  # Updated with your new API key
+GOOGLE_MAPS_API_KEY = 'Ur Api key  # Updated with your new API key
 
 def find_nearby_clinics(location):
     # Use Google Places API to find clinics/hospitals near the location
-    url = f'https://maps.googleapis.com/maps/api/place/textsearch/json?query=clinic+hospital+near+{location}+India&key={GOOGLE_MAPS_API_KEY}'
+    url = "maps url"
     try:
         response = requests.get(url)
         data = response.json()
@@ -540,8 +540,7 @@ def medicine_summary(filename):
 import openai
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-# --- Google Cloud Vision API Setup ---
-os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = r'C:\Users\cmsh8\medical-ai-assistant\gcloud-vision-key.json'
+
 
 # --- Enhanced Text Extraction with Google Cloud Vision ---
 def extract_text_with_vision(filepath):

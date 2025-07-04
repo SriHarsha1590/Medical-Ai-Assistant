@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Description</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css">
+    <style>
+        body { background: linear-gradient(120deg, #f0f8ff 0%, #e0eafc 100%); }
+        .desc-card { background: #fff; border-radius: 18px; box-shadow: 0 4px 24px rgba(0,198,255,0.10); padding: 2.5rem; }
+        .alert-info { background: linear-gradient(90deg, #e0eafc 0%, #f0f8ff 100%); color: #007bff; }
+        .alert-success { background: linear-gradient(90deg, #d4fc79 0%, #96e6a1 100%); color: #155724; }
+        .alert-info ul, .alert-success ul { margin-bottom: 0; }
+        .btn-success { background: linear-gradient(90deg, #28a745 0%, #00c6ff 100%); border: none; }
+        .btn-success:hover { background: linear-gradient(90deg, #218838 0%, #00aaff 100%); }
+    </style>
+</head>
+<body>
+<nav class="navbar navbar-expand-lg navbar-dark bg-primary shadow">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-bold" href="/">Medical AI Assistant</a>
+    <div class="d-flex">
+      {% if session['username'] %}
+        <a href="{{ url_for('logout') }}" class="btn btn-outline-light">Logout</a>
+      {% endif %}
+    </div>
+  </div>
+</nav>
+<div class="container mt-5">
+    <div class="desc-card">
+        <h1 class="mb-4 text-primary">File Description</h1>
+        <div class="mb-3">
+            <strong>File:</strong> <a href="{{ url_for('uploaded_file', filename=filename) }}" target="_blank">{{ filename }}</a>
+        </div>
+        <div class="alert alert-info mb-4 fs-5">
+            {{ description }}
+        </div>
+        <form method="post" class="mb-3" id="symptom-form">
+            <label for="symptoms" class="form-label">Enter your symptoms (comma separated):</label>
+            <input type="text" class="form-control mb-2" id="symptoms" name="symptoms" placeholder="e.g. fever, cough">
+            <label for="location" class="form-label mt-2">Enter your location (city or area):</label>
+            <input type="text" class="form-control mb-2" id="location" name="location" placeholder="e.g. New Delhi, Andheri, etc." value="{{ user_location or '' }}">
+            <button type="submit" class="btn btn-success mt-2 w-100" id="find-clinics">Check Symptoms & Find Clinics</button>
+        </form>
+        <div id="clinics-section"></div>
+        {% if health_tips and health_tips|length > 0 %}
+            <div class="alert alert-success mt-3">
+                <h5>Health Tips</h5>
+                <ul>
+                {% for tip in health_tips %}
+                    <li>{{ tip }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        {% if medicines and medicines|length > 0 %}
+            <div class="alert alert-info mt-3">
+                <h5>Suggested Medicines</h5>
+                <ul>
+                {% for med in medicines %}
+                    <li>{{ med }}</li>
+                {% endfor %}
+                </ul>
+                <small class="text-muted">*Always consult a healthcare professional before taking any medication.</small>
+            </div>
+        {% endif %}
+        {% if symptom_descriptions and symptom_descriptions|length > 0 %}
+            <div class="alert alert-primary mt-3">
+                <h5>Symptom Descriptions</h5>
+                <ul>
+                {% for desc in symptom_descriptions %}
+                    <li>{{ desc }}</li>
+                {% endfor %}
+                </ul>
+            </div>
+        {% endif %}
+        <a href="/" class="btn btn-secondary mt-4">Upload Another</a>
+    </div>
+</div>
+<div class="mt-4" id="map" style="height: 600px; width: 100%; border-radius: 24px; box-shadow: 0 2px 24px rgba(0,198,255,0.13);"></div>
+<script type="text/javascript">
+  // Modern Google Maps rendering for nearest clinics/hospitals
+  var clinics = JSON.parse('{{ clinics|tojson|safe }}');
+  function showClinicsList(clinics) {
+    if (!clinics || clinics.length === 0) {
+      document.getElementById('clinics-section').innerHTML = '<div class="alert alert-warning mt-3">No clinics or hospitals found nearby.</div>';
+      return;
+    }
+    let html = '<div class="alert alert-info mt-3"><h5 class="mb-3">Nearby Clinics & Hospitals</h5><ul class="list-group">';
+    clinics.forEach(function(clinic, idx) {
+      html += `<li class="list-group-item d-flex align-items-start">
+        <span class="badge bg-primary me-3 fs-6">${idx + 1}</span>
+        <div>
+          <span class="fs-6">${clinic.name}</span><br>
+          <span class="text-muted">${clinic.address}</span><br>
+          <span class="text-secondary small">${clinic.distance ? clinic.distance : ''}</span>
+        </div>
+        <a href="https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(clinic.name + ' ' + clinic.address)}" target="_blank" class="btn btn-outline-info btn-sm ms-auto">View on Map</a>
+      </li>`;
+    });
+    html += '</ul></div>';
+    document.getElementById('clinics-section').innerHTML = html;
+  }
+
+  function initMap() {
+    var indiaCenter = {lat: 22.9734, lng: 78.6569};
+    var mapCenter = clinics.length > 0 && clinics[0].lat && clinics[0].lng ? {lat: clinics[0].lat, lng: clinics[0].lng} : indiaCenter;
+    var map = new google.maps.Map(document.getElementById('map'), {
+      zoom: clinics.length > 0 ? 12 : 5,
+      center: mapCenter,
+      mapTypeControl: false,
+      streetViewControl: false,
+      fullscreenControl: true,
+      zoomControl: true,
+      styles: [
+        { elementType: 'geometry', stylers: [{ color: '#e0eafc' }] },
+        { elementType: 'labels.text.fill', stylers: [{ color: '#000', fontWeight: 'normal' }] },
+        { elementType: 'labels.text.stroke', stylers: [{ color: '#fff' }] },
+        // Roads and highways blue and clear
+        { featureType: 'road', elementType: 'geometry', stylers: [{ color: '#2196f3' }, { weight: 1.5 }] },
+        { featureType: 'road', elementType: 'labels.text.fill', stylers: [{ color: '#000' }] },
+        { featureType: 'road', elementType: 'labels.text.stroke', stylers: [{ color: '#fff' }] },
+        { featureType: 'road.highway', elementType: 'geometry', stylers: [{ color: '#1976d2' }, { weight: 2 }] },
+        { featureType: 'road.highway', elementType: 'labels.text.fill', stylers: [{ color: '#000' }] },
+        { featureType: 'road.highway', elementType: 'labels.text.stroke', stylers: [{ color: '#fff' }] },
+        // India/province outlines clear, not bold or blue, and place names black and not bold
+        { featureType: 'administrative.country', elementType: 'geometry.stroke', stylers: [{ color: '#000' }, { weight: 1 }] },
+        { featureType: 'administrative.country', elementType: 'labels.text.fill', stylers: [{ color: '#000', fontWeight: 'normal' }] },
+        { featureType: 'administrative.country', elementType: 'labels.text.stroke', stylers: [{ color: '#fff' }] },
+        { featureType: 'administrative.province', elementType: 'geometry.stroke', stylers: [{ color: '#000' }, { weight: 1 }] },
+        { featureType: 'administrative.province', elementType: 'labels.text.fill', stylers: [{ color: '#000', fontWeight: 'normal' }] },
+        { featureType: 'administrative.province', elementType: 'labels.text.stroke', stylers: [{ color: '#fff' }] },
+        // Remove POI/parks blue/green
+        { featureType: 'poi.park', elementType: 'geometry', stylers: [{ color: '#e0eafc' }] }
+      ]
+    });
+    var infowindow = new google.maps.InfoWindow();
+    clinics.forEach(function(clinic, idx) {
+      if (clinic.lat && clinic.lng) {
+        var marker = new google.maps.Marker({
+          position: {lat: clinic.lat, lng: clinic.lng},
+          map: map,
+          title: clinic.name,
+          icon: {
+            url: 'https://maps.google.com/mapfiles/ms/icons/hospitals.png',
+            scaledSize: new google.maps.Size(32, 32)
+          },
+          label: {
+            text: String(idx + 1),
+            color: '#fff',
+            fontWeight: 'light',
+            fontSize: '10px'
+          }
+        });
+        marker.addListener('click', function() {
+          infowindow.setContent('<span>' + clinic.name + '</span><br>' + clinic.address);
+          infowindow.open(map, marker);
+        });
+      }
+    });
+    // Add user location marker if available
+    if (window.userLocation) {
+      new google.maps.Marker({
+        position: window.userLocation,
+        map: map,
+        title: 'Your Location',
+        icon: {
+          url: 'https://maps.google.com/mapfiles/ms/icons/blue-dot.png',
+          scaledSize: new google.maps.Size(32, 32)
+        }
+      });
+    }
+  }
+  window.onload = function() {
+    showClinicsList(clinics);
+    if (typeof google !== 'undefined' && google.maps) {
+      initMap();
+    }
+    if (navigator.geolocation) {
+      navigator.geolocation.getCurrentPosition(function(position) {
+        const lat = position.coords.latitude;
+        const lng = position.coords.longitude;
+        window.userLocation = {lat: lat, lng: lng};
+        fetch(`https://maps.googleapis.com/maps/api/geocode/json?latlng=${lat},${lng}&key={{ api_key }}`)
+          .then(res => res.json())
+          .then(data => {
+            if (data.results && data.results.length > 0) {
+              document.getElementById('location').value = data.results[0].formatted_address;
+            }
+          });
+      });
+    }
+  };
+  document.getElementById('symptom-form').onsubmit = function(e) {
+    e.preventDefault();
+    const location = document.getElementById('location').value;
+    const symptoms = document.getElementById('symptoms').value;
+    fetch('/describe/{{ filename }}', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+      body: `symptoms=${encodeURIComponent(symptoms)}&location=${encodeURIComponent(location)}`
+    })
+    .then(response => response.text())
+    .then(html => {
+      document.open();
+      document.write(html);
+      document.close();
+    });
+  };
+</script>
+<script async defer src="https://maps.googleapis.com/maps/api/js?key={{ api_key }}&callback=initMap"></script>
+</body>
+</html>

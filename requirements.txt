@@ -1,0 +1,8 @@
+flask
+Pillow
+PyMuPDF
+transformers
+torch
+scikit-learn
+spacy
+pytesseract

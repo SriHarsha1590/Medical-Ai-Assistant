@@ -1,9 +1,3 @@
-import warnings
-warnings.filterwarnings("ignore", category=UserWarning)
-warnings.filterwarnings("ignore", category=FutureWarning)
-from transformers.utils import logging as hf_logging
-hf_logging.set_verbosity_error()
-
 import logging
 from flask import Flask, render_template, request, redirect, url_for, send_from_directory, flash, session, jsonify
 from werkzeug.utils import secure_filename

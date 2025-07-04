@@ -156,3 +156,4 @@ uploads/
 *.sqlite
 *.log
 venv/
+gcloud-vision-key.json
